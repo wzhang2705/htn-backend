@@ -87,41 +87,46 @@ export const updateSkillByIdAndName = (id, name, rating) => {
 
 //data is a json
 export const updateHacker = (id, data) => {
-    let columns = "";
-    for (var key in data) {
-        if (data.hasOwnProperty(key)) {
-            if (key == "skills") {
-                //ignore for now;
-            } else if (columns == "") {
-                columns += `${key} = '${data[key]}' `
-            } else {
-                columns += `,${key} = '${data[key]}' `
+    return new Promise((resolve, reject) => {
+        let columns = "";
+        for (var key in data) {
+            if (data.hasOwnProperty(key)) {
+                if (key == "skills") {
+                    //ignore for now;
+                } else if (columns == "") {
+                    columns += `${key} = '${data[key]}' `
+                } else {
+                    columns += `,${key} = '${data[key]}' `
+                }
             }
         }
-    }
-    if (data.hasOwnProperty("skills")) {
-        for (var i = 0; i < data["skills"].length; i++) {
-            let skills = data["skills"][i];
-            countSkillByIdAndName(id, skills.name).then(function(result) {
-                JSON.stringify(result);
-                if (result.count == 0) {
-                    createSkill(id, skills.name, skills.rating);
-                } else {
-                    updateSkillByIdAndName(id, skills.name, skills.rating);
+        if (data.hasOwnProperty("skills")) {
+            for (var i = 0; i < data["skills"].length; i++) {
+                let skills = data["skills"][i];
+                countSkillByIdAndName(id, skills.name).then(function(result) {
+                    JSON.stringify(result);
+                    if (result.count == 0) {
+                        createSkill(id, skills.name, skills.rating);
+                    } else {
+                        updateSkillByIdAndName(id, skills.name, skills.rating);
+                    }
+                }).catch(function(err) {
+                    console.log("An error occured", err);
+                    reject(err);
+                })
+            }
+        }
+        if (columns != "") {
+            var sql = `UPDATE hackerdata SET ` + columns + `WHERE hackerid = ?`
+            db.run(sql, [id], (err, result) => {
+                if (err) {
+                    console.log(err);
                 }
-            }).catch(function(err) {
-                console.log("An error occured", err);
+                resolve(result);
             })
         }
-    }
-    if (columns != "") {
-        var sql = `UPDATE hackerdata SET ` + columns + `WHERE hackerid = ?`
-        db.run(sql, [id], (err, result) => {
-            if (err) {
-                console.log(err);
-            }
-        })
-    }
+        resolve(0);
+    });
 };
 
 export const getSkillFrequency = (min, max) => {

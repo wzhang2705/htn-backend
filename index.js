@@ -2,15 +2,13 @@ import express from "express";
 import sqlite3 from "sqlite3";
 import bodyParser from "body-parser";
 import { updateHacker, getAllUsers, getUserById, getSkillFrequency } from "./hackers.js";
-import { initializeData } from "./initializedb.js";
 
 const port = process.env.PORT || 5000;
 
 const app = express();
 const jsonParser = bodyParser.json();
 
-//create and initialize database information
-//initializeData('./json/hacker-data-2021.json');
+//TODO: initialize database with initializedb.js script
 
 //connect to database
 let db = new sqlite3.Database('hackers.db');
@@ -47,7 +45,8 @@ app.get('/users/:id', (req, res) => {
 //for all hackers that share that name
 app.get('/users/byname/:name', (req, res) => {
     let name = req.params.name;
-    var sql = `SELECT x.name, 
+    var sql = `SELECT x.hackerid,
+                      x.name, 
                       x.picture, 
                       x.company,
                       x.email,
@@ -71,12 +70,15 @@ app.get('/users/byname/:name', (req, res) => {
 app.put('/users/:id', jsonParser, (req, res) => {
     let id = req.params.id;
     let request = req.body;
-    updateHacker(id, request);
-    getUserById(id).then(function(result) {
-        res.status(200).json({result})
+    updateHacker(id, request).then(function() {
+        getUserById(id).then(function(result) {
+            res.status(200).json({result})
+        }).catch(function(err) {
+            console.log(err);
+        })
     }).catch(function(err) {
         console.log(err);
-    })
+    });
 })
 
 //requires params min_frequency and max_frequency
